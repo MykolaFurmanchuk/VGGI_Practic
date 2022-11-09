@@ -29,8 +29,14 @@ function Model(name) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
         gl.vertexAttribPointer(shProgram.iAttribVertex, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(shProgram.iAttribVertex);
-   
-        gl.drawArrays(gl.LINE_STRIP, 0, this.count);
+        let curLine = 0;
+        let nextLine = 360;
+        let countLine = Math.floor(this.count / nextLine); 
+        for(let i = 0; i <= countLine; i++){
+            gl.drawArrays(gl.LINE_STRIP, curLine , nextLine);
+            curLine += nextLine;
+
+        }
     }
 }
 
@@ -97,9 +103,9 @@ function CreateSurfaceData()
     let y = 0;
     let an = 0;
     // 2 * b is a lenght of a segment between two cylinders of diferent diameters
-    for (let i=0; i <= 2 * b;  i+= 0.1) {
+    for (let i=0; i < 2 * b;  i+= 0.1) {
         // j is the angle in the planes of parallels taken from the axis Ox in the direction of the axis Oy
-        for (let j = 0; j<= 360; j+=1){   
+        for (let j = 0; j< 360; j+=1){   
             an = deg2rad(( 180 * i ) / (4 * b))
             r = ( R2 - R1 ) * Math.pow(Math.sin(an),2) + R1; 
             x = r * Math.cos(deg2rad(j))
