@@ -96,7 +96,7 @@ function CreateSurfaceData()
     let x = 0;
     let y = 0;
     let an = 0;
-    for (let i=0; i<=2*b;  i+= 0.1) {
+    for (let i=0; i <= 2*b;  i+= 0.1) {
         for (let j = 0; j<= 360; j+=1){   
             an = deg2rad(( 180 * i ) / (4 * b))
             r = ( R2 - R1 ) * Math.pow(Math.sin(an),2) + R1; 
