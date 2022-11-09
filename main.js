@@ -89,19 +89,22 @@ function draw() {
 function CreateSurfaceData()
 {
     let R1 = 0.3;
-    let R2 = 3*R1;
-    let b =  3*R1;
+    let R2 = 3 * R1;
+    let b =  3 * R1;
     let vertexList = [];
     let r = 0;
     let x = 0;
     let y = 0;
     let an = 0;
-    for (let i=0; i<=2*b;  i+= 0.1) {
+    // 2 * b is a lenght of a segment between two cylinders of diferent diameters
+    for (let i=0; i <= 2 * b;  i+= 0.1) {
+        // j is the angle in the planes of parallels taken from the axis Ox in the direction of the axis Oy
         for (let j = 0; j<= 360; j+=1){   
             an = deg2rad(( 180 * i ) / (4 * b))
             r = ( R2 - R1 ) * Math.pow(Math.sin(an),2) + R1; 
             x = r * Math.cos(deg2rad(j))
             y = r * Math.sin(deg2rad(j))
+            // z = i
             vertexList.push(x, y, i);   
         }
     }
