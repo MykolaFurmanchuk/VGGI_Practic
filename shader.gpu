@@ -1,5 +1,6 @@
 
 
+
 // Vertex shader
 const vertexShaderSource = `
 attribute vec3 vertex;
