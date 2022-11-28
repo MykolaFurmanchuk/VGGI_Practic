@@ -8,8 +8,6 @@ let spaceball;                  // A SimpleRotator object that lets the user rot
 function deg2rad(angle) {
     return angle * Math.PI / 180;
 }
-
-
 // Constructor
 function Model(name) {
     this.name = name;
@@ -17,28 +15,31 @@ function Model(name) {
     this.count = 0;
 
     this.BufferData = function(vertices) {
-
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
+        for(let i = 3; i<=vertices.length; i+=6){
+            vertices[i] = vertices[i+1077];//1077
+            vertices[i+1] = vertices[i+1078];//1078
+            vertices[i+2] = vertices[i+1079];//1079
+        }
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STREAM_DRAW);
-
         this.count = vertices.length/3;
     }
 
     this.Draw = function() {
-
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
         gl.vertexAttribPointer(shProgram.iAttribVertex, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(shProgram.iAttribVertex);
-        let curLine = 0;
-        let nextLine = 360;
-        let countLine = Math.floor(this.count / nextLine); 
-        for(let i = 0; i <= countLine; i++){
-            gl.drawArrays(gl.LINE_STRIP, curLine , nextLine);
-            curLine += nextLine;
-
-        }
+         let curLine = 0;
+         let nextLine = 360;
+         let countLine = Math.floor(this.count / nextLine); 
+         for(let i = 0; i <= countLine; i++){
+             gl.drawArrays(gl.LINE_STRIP, curLine , nextLine);
+             curLine += nextLine;
+         }
+        //gl.drawArrays(gl.TRIANGLES, 0, this.count);
     }
 }
+
 
 
 // Constructor
@@ -68,6 +69,7 @@ function draw() {
     gl.clearColor(0,0,0,1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     
+    
     /* Set the values of the projection transformation */
     let projection = m4.perspective(Math.PI/8, 1, 8, 12); 
     
@@ -87,7 +89,7 @@ function draw() {
     gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, modelViewProjection );
     
     /* Draw the six faces of a cube, with different colors. */
-    gl.uniform4fv(shProgram.iColor, [1,1,0,1] );
+    gl.uniform4fv(shProgram.iColor, [0,1,0,1] );
 
     surface.Draw();
 }
@@ -110,7 +112,6 @@ function CreateSurfaceData()
             r = ( R2 - R1 ) * Math.pow(Math.sin(an),2) + R1; 
             x = r * Math.cos(deg2rad(j))
             y = r * Math.sin(deg2rad(j))
-            // z = i
             vertexList.push(x, y, i);   
         }
     }
@@ -128,6 +129,15 @@ function initGL() {
     shProgram.iAttribVertex              = gl.getAttribLocation(prog, "vertex");
     shProgram.iModelViewProjectionMatrix = gl.getUniformLocation(prog, "ModelViewProjectionMatrix");
     shProgram.iColor                     = gl.getUniformLocation(prog, "color");
+    shProgram.positionLocation = gl.getAttribLocation(program, "a_position");
+    shProgram.normalLocation = gl.getAttribLocation(program, "a_normal");
+
+    // lookup uniforms
+    shProgram.worldViewProjectionLocation = gl.getUniformLocation(program, "u_worldViewProjection");
+    shProgram.worldInverseTransposeLocation = gl.getUniformLocation(program, "u_worldInverseTranspose");
+    shProgram.colorLocation = gl.getUniformLocation(program, "u_color");
+    shProgram.lightWorldPositionLocation = gl.getUniformLocation(program, "u_lightWorldPosition");
+    shProgram.worldLocation = gl.getUniformLocation(program, "u_world");
 
     surface = new Model('Surface');
     surface.BufferData(CreateSurfaceData());
