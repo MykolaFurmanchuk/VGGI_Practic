@@ -16,11 +16,6 @@ function Model(name) {
 
     this.BufferData = function(vertices) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
-        for(let i = 3; i<=vertices.length; i+=6){
-            vertices[i] = vertices[i+1077];//1077
-            vertices[i+1] = vertices[i+1078];//1078
-            vertices[i+2] = vertices[i+1079];//1079
-        }
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STREAM_DRAW);
         this.count = vertices.length/3;
     }
@@ -29,17 +24,9 @@ function Model(name) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
         gl.vertexAttribPointer(shProgram.iAttribVertex, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(shProgram.iAttribVertex);
-         let curLine = 0;
-         let nextLine = 360;
-         let countLine = Math.floor(this.count / nextLine); 
-         for(let i = 0; i <= countLine; i++){
-             gl.drawArrays(gl.LINE_STRIP, curLine , nextLine);
-             curLine += nextLine;
-         }
-        //gl.drawArrays(gl.TRIANGLES, 0, this.count);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.count);
     }
 }
-
 
 
 // Constructor
@@ -103,21 +90,30 @@ function CreateSurfaceData()
     let r = 0;
     let x = 0;
     let y = 0;
+    let z = 0;
     let an = 0;
     // 2 * b is a lenght of a segment between two cylinders of diferent diameters
-    for (let i=0; i < 2 * b;  i+= 0.1) {
+    for (let i=0;  i< 2 * b;  i+= 0.1) {
         // j is the angle in the planes of parallels taken from the axis Ox in the direction of the axis Oy
-        for (let j = 0; j< 360; j+=1){   
+        for (let j = 0; j< 360; j+=1){
             an = deg2rad(( 180 * i ) / (4 * b))
             r = ( R2 - R1 ) * Math.pow(Math.sin(an),2) + R1; 
             x = r * Math.cos(deg2rad(j))
             y = r * Math.sin(deg2rad(j))
-            vertexList.push(x, y, i);   
+            z = i
+            vertexList.push(x, y, z);
+
+            an = deg2rad(( 180 * (i + 0.1) ) / (4 * b));
+            r = ( R2 - R1 ) * Math.pow(Math.sin(an),2) + R1; 
+            x = r * Math.cos(deg2rad(j));
+            y = r * Math.sin(deg2rad(j));
+            z = i + 0.1;
+            vertexList.push(x, y, z);
+    
         }
     }
     return vertexList;
 }
-
 
 /* Initialize the WebGL context. Called from init() */
 function initGL() {
@@ -129,16 +125,7 @@ function initGL() {
     shProgram.iAttribVertex              = gl.getAttribLocation(prog, "vertex");
     shProgram.iModelViewProjectionMatrix = gl.getUniformLocation(prog, "ModelViewProjectionMatrix");
     shProgram.iColor                     = gl.getUniformLocation(prog, "color");
-    shProgram.positionLocation = gl.getAttribLocation(program, "a_position");
-    shProgram.normalLocation = gl.getAttribLocation(program, "a_normal");
-
-    // lookup uniforms
-    shProgram.worldViewProjectionLocation = gl.getUniformLocation(program, "u_worldViewProjection");
-    shProgram.worldInverseTransposeLocation = gl.getUniformLocation(program, "u_worldInverseTranspose");
-    shProgram.colorLocation = gl.getUniformLocation(program, "u_color");
-    shProgram.lightWorldPositionLocation = gl.getUniformLocation(program, "u_lightWorldPosition");
-    shProgram.worldLocation = gl.getUniformLocation(program, "u_world");
-
+    
     surface = new Model('Surface');
     surface.BufferData(CreateSurfaceData());
 
