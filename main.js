@@ -106,6 +106,20 @@ function getY (i,j){
 function getZ(i){
     return i;
 }
+
+function getDerivativeU(u,v,x,y,z,delta){
+    let dx_du = (getX(u+delta,v) - x) / deg2rad(delta);  
+    let dy_du = (getY(u+delta,v) - y) / deg2rad(delta);
+    let dz_du = (getZ(u+delta,v) - z) / deg2rad(delta);
+    return [dx_du,dy_du,dz_du];
+}
+
+function getDerivativeV(u,v,x,y,z,delta){
+    let dx_du = (getX(u,v+delta) - x) / deg2rad(delta);  
+    let dy_du = (getY(u,v+delta) - y) / deg2rad(delta);
+    let dz_du = (getZ(u,v+delta) - z) / deg2rad(delta);
+    return [dx_du,dy_du,dz_du];
+}
 function CreateSurfaceData()
 {
     let normalsList =[];
@@ -113,6 +127,7 @@ function CreateSurfaceData()
     let x = 0;
     let y = 0;
     let z = 0;
+    let delta = 0.0001
     // 2 * b is a lenght of a segment between two cylinders of diferent diameters
     for (let i=0;  i< 2 * b;  i+= 0.1) {
         // j is the angle in the planes of parallels taken from the axis Ox in the direction of the axis Oy
@@ -120,18 +135,23 @@ function CreateSurfaceData()
             x = getX(i,j);
             y = getY(i,j);
             z = getZ(i);
+            let derU = getDerivativeU(i,j,x,y,z,delta);
+            let derV = getDerivativeV(i,j,x,y,z,delta);
+            let res = m4.cross(derU,derV);
             vertexList.push(x, y, z);
+            normalsList.push(res[0],res[1],res[2]);
 
             x = getX(i + 0.1, j);
             y = getY(i + 0.1, j);
             z = getZ(i + 0.1);
+            derU = getDerivativeU(i+0.1,j,x,y,z,delta);
+            derV = getDerivativeV(i+0.1,j,x,y,z,delta);
+            res = m4.cross(derU,derV);
             vertexList.push(x, y, z);
-            
-            
-
+            normalsList.push(res[0],res[1],res[2]);
         }
     }
-    return vertexList;  
+    return [vertexList, normalsList];  
 }
 
 /* Initialize the WebGL context. Called from init() */
