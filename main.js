@@ -4,7 +4,9 @@ let gl;                         // The webgl context.
 let surface;                    // A surface model
 let shProgram;                  // A shader program
 let spaceball;                  // A SimpleRotator object that lets the user rotate the view by mouse.
-
+let R1 = 0.3;
+let R2 = 3 * R1;
+let b =  3 * R1;
 function deg2rad(angle) {
     return angle * Math.PI / 180;
 }
@@ -12,10 +14,15 @@ function deg2rad(angle) {
 function Model(name) {
     this.name = name;
     this.iVertexBuffer = gl.createBuffer();
+    this.iNormalBuffer = gl.createBuffer();
     this.count = 0;
-    this.BufferData = function(vertices) {
+
+    this.BufferData = function(vertices,normals) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STREAM_DRAW);
+        
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.iNormalBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STREAM_DRAW);
         this.count = vertices.length/3;
     }
 
@@ -23,6 +30,11 @@ function Model(name) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
         gl.vertexAttribPointer(shProgram.iAttribVertex, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(shProgram.iAttribVertex);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.iNormalBuffer);
+        gl.vertexAttribPointer(shProgram.iAttribNormal, 3, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(shProgram.iAttribNormal);
+
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.count);
     }
 }
@@ -36,6 +48,7 @@ function ShaderProgram(name, program) {
 
     // Location of the attribute variable in the shader program.
     this.iAttribVertex = -1;
+    this.iAttribNormal = -1;
     // Location of the uniform specifying a color for the primitive.
     this.iColor = -1;
     // Location of the uniform matrix representing the combined transformation.
@@ -80,38 +93,45 @@ function draw() {
     surface.Draw();
 }
 
+function getX (i,j){
+    let r = ( R2 - R1 ) * Math.pow(Math.sin(deg2rad(( 180 * i ) / (4 * b))),2) + R1; 
+    return r * Math.cos(deg2rad(j));
+}
+
+function getY (i,j){
+    let r = ( R2 - R1 ) * Math.pow(Math.sin(deg2rad(( 180 * i ) / (4 * b))),2) + R1; 
+    return r * Math.sin(deg2rad(j))
+}
+
+function getZ(i){
+    return i;
+}
 function CreateSurfaceData()
 {
-    let R1 = 0.3;
-    let R2 = 3 * R1;
-    let b =  3 * R1;
+    let normalsList =[];
     let vertexList = [];
-    let r = 0;
     let x = 0;
     let y = 0;
     let z = 0;
-    let an = 0;
     // 2 * b is a lenght of a segment between two cylinders of diferent diameters
     for (let i=0;  i< 2 * b;  i+= 0.1) {
         // j is the angle in the planes of parallels taken from the axis Ox in the direction of the axis Oy
         for (let j = 0; j< 360; j+=1){
-            an = deg2rad(( 180 * i ) / (4 * b))
-            r = ( R2 - R1 ) * Math.pow(Math.sin(an),2) + R1; 
-            x = r * Math.cos(deg2rad(j))
-            y = r * Math.sin(deg2rad(j))
-            z = i
+            x = getX(i,j);
+            y = getY(i,j);
+            z = getZ(i);
             vertexList.push(x, y, z);
 
-            an = deg2rad(( 180 * (i + 0.1) ) / (4 * b));
-            r = ( R2 - R1 ) * Math.pow(Math.sin(an),2) + R1; 
-            x = r * Math.cos(deg2rad(j));
-            y = r * Math.sin(deg2rad(j));
-            z = i + 0.1;
+            x = getX(i + 0.1, j);
+            y = getY(i + 0.1, j);
+            z = getZ(i + 0.1);
             vertexList.push(x, y, z);
-    
+            
+            
+
         }
     }
-    return vertexList;
+    return vertexList;  
 }
 
 /* Initialize the WebGL context. Called from init() */
@@ -125,8 +145,11 @@ function initGL() {
     shProgram.iModelViewProjectionMatrix = gl.getUniformLocation(prog, "ModelViewProjectionMatrix");
     shProgram.iColor                     = gl.getUniformLocation(prog, "color");
     
+    shProgram.iAttribNormal              = gl.getAttribLocation(prog,"normal");
+
     surface = new Model('Surface');
     surface.BufferData(CreateSurfaceData());
+
 
     gl.enable(gl.DEPTH_TEST);
 }
