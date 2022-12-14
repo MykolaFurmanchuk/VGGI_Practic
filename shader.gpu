@@ -4,11 +4,22 @@
 // Vertex shader
 const vertexShaderSource = `
 attribute vec3 vertex;
-attribute vec3 normal;
-uniform mat4 ModelViewProjectionMatrix;
+attribute vec3 normals;
+
+uniform mat4 ModelViewProjectionMatrix; // u_worldViewProjection
+uniform mat4 world;
+uniform mat4 worldInverseTranspose;
+
+uniform vec3 lightWorldPosition;
+
+varying vec3 v_normal; 
+varying vec3 v_surfaceToLight;
 
 void main() {
-    gl_Position = ModelViewProjectionMatrix * vec4(vertex,1.0);
+    gl_Position = ModelViewProjectionMatrix * vec4(vertex, 1.0);
+    v_normal = mat3(worldInverseTranspose) * normals;
+    vec3 surfaceWorldPosition = (world * vec4(vertex, 1.0)).xyz;
+    v_surfaceToLight = lightWorldPosition - surfaceWorldPosition;
 }`;
 
 
@@ -21,6 +32,17 @@ const fragmentShaderSource = `
 #endif
 
 uniform vec4 color;
+
+varying vec3 v_normal;
+varying vec3 v_surfaceToLight;
+
 void main() {
+    vec3 normal = normalize(v_normal);
+    vec3 surfaceToLightDirection = normalize(v_surfaceToLight);
+
+    float light = dot(normal, surfaceToLightDirection);
+
     gl_FragColor = color;
+
+    gl_FragColor.rgb *= light;
 }`;

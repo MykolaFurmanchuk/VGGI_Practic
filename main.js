@@ -54,6 +54,10 @@ function ShaderProgram(name, program) {
     // Location of the uniform matrix representing the combined transformation.
     this.iModelViewProjectionMatrix = -1;
 
+    this.iWorldInverseTransposeLocation =  -1;
+    this.iLightWorldPositionLocation = -1;
+    this.iWorldLocation = -1;
+
     this.Use = function() {
         gl.useProgram(this.prog);
     }
@@ -75,20 +79,25 @@ function draw() {
     /* Get the view matrix from the SimpleRotator object.*/
     let modelView = spaceball.getViewMatrix();
 
-    let rotateToPointZero = m4.axisRotation([0.707,0.707,0], 0.7);
-    let translateToPointZero = m4.translation(0,0,-10);
+    let rotateToPointZero = m4.axisRotation([0.5,0.5,0.5], 0.7);
+    let WorldMatrix = m4.translation(0,0,-10);
 
     let matAccum0 = m4.multiply(rotateToPointZero, modelView );
-    let matAccum1 = m4.multiply(translateToPointZero, matAccum0 );
+    let matAccum1 = m4.multiply(WorldMatrix, matAccum0 );
         
-    /* Multiply the projection matrix times the modelview matrix to give the
-       combined transformation matrix, and send that to the shader program. */
+
     let modelViewProjection = m4.multiply(projection, matAccum1 );
 
-    gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, modelViewProjection );
-    
-    /* Draw the six faces of a cube, with different colors. */
+    let worldInverseMatrix = m4.inverse(matAccum1);
+    let worldInverseTransposeMatrix = m4.transpose(worldInverseMatrix);
+
+    gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, modelViewProjection ); //worldViewProjection
+    gl.uniformMatrix4fv(shProgram.iWorldInverseTransposeLocation, false, worldInverseTransposeMatrix);
+    gl.uniformMatrix4fv(shProgram.iWorldLocation, false, matAccum1);
+
     gl.uniform4fv(shProgram.iColor, [0,1,0,1] );
+
+    gl.uniform3fv(shProgram.iLightWorldPositionLocation, [20, 30, 50]);
 
     surface.Draw();
 }
@@ -165,10 +174,15 @@ function initGL() {
     shProgram.iModelViewProjectionMatrix = gl.getUniformLocation(prog, "ModelViewProjectionMatrix");
     shProgram.iColor                     = gl.getUniformLocation(prog, "color");
     
-    shProgram.iAttribNormal              = gl.getAttribLocation(prog,"normal");
+    shProgram.iAttribNormal              = gl.getAttribLocation(prog,"normals");
+
+    shProgram.iWorldInverseTransposeLocation = gl.getUniformLocation(prog, "worldInverseTranspose");
+    shProgram.iLightWorldPositionLocation = gl.getUniformLocation(prog, "lightWorldPosition");
+    shProgram.iWorldLocation = gl.getUniformLocation(prog, "world");
 
     surface = new Model('Surface');
-    surface.BufferData(CreateSurfaceData());
+    let surfaceData = CreateSurfaceData()
+    surface.BufferData(surfaceData[0],surfaceData[1]);
 
 
     gl.enable(gl.DEPTH_TEST);
