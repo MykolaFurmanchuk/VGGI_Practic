@@ -1,3 +1,3 @@
 # WebGL
 
-Practical assigment #2 (Surface Rendering)
+Practical assigment #2 
