@@ -57,6 +57,7 @@ function ShaderProgram(name, program) {
     this.iWorldInverseTransposeLocation =  -1;
     this.iLightWorldPositionLocation = -1;
     this.iWorldLocation = -1;
+    this.viewWorldPositionLocation = -1;
 
     this.Use = function() {
         gl.useProgram(this.prog);
@@ -94,14 +95,41 @@ function draw() {
     gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, modelViewProjection ); //worldViewProjection
     gl.uniformMatrix4fv(shProgram.iWorldInverseTransposeLocation, false, worldInverseTransposeMatrix);
     gl.uniformMatrix4fv(shProgram.iWorldLocation, false, matAccum1);
-
-    gl.uniform4fv(shProgram.iColor, [0,1,0,1] );
-
-    gl.uniform3fv(shProgram.iLightWorldPositionLocation, [20, 30, 50]);
-
+    gl.uniform3fv(shProgram.iLightWorldPositionLocation, getCoordParabola() );
+    gl.uniform3fv(shProgram.viewWorldPositionLocation, [100,150,200]);
     surface.Draw();
 }
 
+let InputCounter = 0.0;
+window.addEventListener("keydown", (event) =>{  
+    switch (event.key) {
+      case "ArrowLeft":
+        drawParabolaL();
+        break;
+      case "ArrowRight":
+        drawParabolaR();
+        break;
+      default:
+        return; 
+    }
+});
+
+function drawParabolaL()
+{
+    InputCounter -= 0.05;
+    draw();
+}
+
+function drawParabolaR()
+{
+    InputCounter += 0.05;
+    draw();
+}
+
+function getCoordParabola() {
+    let cord = Math.cos(InputCounter) * 10;
+    return [cord, 30,  (cord * cord)*2-100];
+}
 function getX (i,j){
     let r = ( R2 - R1 ) * Math.pow(Math.sin(deg2rad(( 180 * i ) / (4 * b))),2) + R1; 
     return r * Math.cos(deg2rad(j));
@@ -178,8 +206,9 @@ function initGL() {
 
     shProgram.iWorldInverseTransposeLocation = gl.getUniformLocation(prog, "worldInverseTranspose");
     shProgram.iLightWorldPositionLocation = gl.getUniformLocation(prog, "lightWorldPosition");
-    shProgram.iWorldLocation = gl.getUniformLocation(prog, "world");
+    shProgram.iWorldLocation             = gl.getUniformLocation(prog, "world");
 
+    shProgram.viewWorldPositionLocation = gl.getUniformLocation(prog, "viewWorldPosition");
     surface = new Model('Surface');
     let surfaceData = CreateSurfaceData()
     surface.BufferData(surfaceData[0],surfaceData[1]);

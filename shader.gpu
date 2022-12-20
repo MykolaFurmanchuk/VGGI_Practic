@@ -30,7 +30,7 @@ varying vec3 v_surfaceToLight;
 
 varying vec3 vertexPos;
 void main() {
-    vec3 AmbientLight   = vec3(1.0,1.0,1.0);
+    vec3 AmbientLight   = vec3(0.0,1.0,1.0);
     vec3 DiffuseLight   = vec3(1.0,1.0,1.0);
     vec3 SpecularLight  = vec3(1.0,1.0,1.0);
     vec3 AmbientModel   = vec3(0.1,0.1,0.1);
@@ -39,8 +39,9 @@ void main() {
     vec3 normal = normalize(v_normal); 
     vec3 Light = normalize(v_surfaceToLight);
 
+
     float LightPoint = max(dot(normal, Light), 0.0); 
-    float shininess = 1.0;
+    float shininess = 5.0;
     float specular = 0.0;
     if(LightPoint > 0.0) {
         vec3 R = reflect(-Light, normal);
