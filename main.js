@@ -86,8 +86,6 @@ function ShaderProgram(name, program) {
 function draw() { 
     gl.clearColor(0,0,0,1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.enable(gl.CULL_FACE);
-    gl.enable(gl.DEPTH_TEST);
     /* Set the values of the projection transformation */
     let projection = m4.perspective(Math.PI/8, 1, 8, 12); 
     
@@ -112,7 +110,7 @@ function draw() {
     gl.uniform3fv(shProgram.iLightWorldPositionLocation, getCoordParabola() );
     gl.uniform3fv(shProgram.viewWorldPositionLocation, [100,150,200]);
 
-    gl.uniform1i(shProgram.ITMU, 0);
+    gl.uniform1i(shProgram.Itmu, 0);
     surface.Draw();
 }
 
@@ -195,7 +193,7 @@ function CreateSurfaceData()
             
             vertexList.push(x, y, z);
             normalsList.push(res[0],res[1],res[2]);
-            texCoordList.push(i/(2 * b),j/360);
+            texCoordList.push(i/(2 * b), j/360);
           
 
             x = getX(i + 0.1, j);
@@ -206,7 +204,7 @@ function CreateSurfaceData()
             res = m4.cross(derU,derV);
             vertexList.push(x, y, z);
             normalsList.push(res[0],res[1],res[2]);
-            texCoordList.push((i+0.1)/(2 * b),j/360);
+            texCoordList.push((i+0.1)/(2 * b), j/360);
             
         }
     }
@@ -219,6 +217,9 @@ function createTexture(){
     let texture = gl.createTexture();
     
     gl.bindTexture(gl.TEXTURE_2D, texture);
+
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
@@ -231,7 +232,6 @@ function createTexture(){
     img.addEventListener('load', function() {
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE, img);
-        console.log("Texture is loaded!");
         draw();
     });
 }
@@ -254,7 +254,7 @@ function initGL() {
     shProgram.iWorldLocation                    = gl.getUniformLocation(prog, "world");
     shProgram.viewWorldPositionLocation         = gl.getUniformLocation(prog, "viewWorldPosition");
     
-    shProgram.ITMU                              = gl.getUniformLocation(prog, "tmu");//u_tex->textureLocation
+    shProgram.Itmu                            = gl.getUniformLocation(prog, "tmu");//u_tex->textureLocation
     shProgram.itexCoordLocation                 = gl.getAttribLocation(prog, "texCoordLocation")//a_tex->texcoordLocation
 
     surface = new Model('Surface');
@@ -263,7 +263,7 @@ function initGL() {
 
     //createTexture();
 
-    //gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.DEPTH_TEST);
 }
 
 
