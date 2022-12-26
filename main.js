@@ -15,14 +15,19 @@ function Model(name) {
     this.name = name;
     this.iVertexBuffer = gl.createBuffer();
     this.iNormalBuffer = gl.createBuffer();
+    this.iTexBuffer    = gl.createBuffer();
     this.count = 0;
 
-    this.BufferData = function(vertices,normals) {
+    this.BufferData = function(vertices,normals,texCoord) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STREAM_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
         
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iNormalBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STREAM_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normals), gl.STATIC_DRAW);
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.iTexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoord), gl.STATIC_DRAW);
+
         this.count = vertices.length/3;
     }
 
@@ -35,7 +40,12 @@ function Model(name) {
         gl.vertexAttribPointer(shProgram.iAttribNormal, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(shProgram.iAttribNormal);
 
-        gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.count);
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.iTexBuffer);
+        gl.vertexAttribPointer(shProgram.iTexBuffer, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(shProgram.iTexBuffer);
+
+
+        gl.drawArrays(gl.LINE_STRIP, 0, this.count);
     }
 }
 
@@ -58,6 +68,9 @@ function ShaderProgram(name, program) {
     this.iLightWorldPositionLocation = -1;
     this.iWorldLocation = -1;
     this.viewWorldPositionLocation = -1;
+     
+    this.ITMU = -1;
+    this.itexCoordLocation = -1;
 
     this.Use = function() {
         gl.useProgram(this.prog);
@@ -97,6 +110,9 @@ function draw() {
     gl.uniformMatrix4fv(shProgram.iWorldLocation, false, matAccum1);
     gl.uniform3fv(shProgram.iLightWorldPositionLocation, getCoordParabola() );
     gl.uniform3fv(shProgram.viewWorldPositionLocation, [100,150,200]);
+
+    gl.uniform1i(shProgram.ITMU, 0);
+    //gl.enable(gl.TEXTURE_2D);
     surface.Draw();
 }
 
@@ -166,7 +182,7 @@ function CreateSurfaceData()
     let z = 0;
     let delta = 0.0001
     // 2 * b is a lenght of a segment between two cylinders of diferent diameters
-    for (let i=0;  i< 2 * b;  i+= 0.1) {
+    for (let i = 0;  i< 2 * b;  i+= 0.1) {
         // j is the angle in the planes of parallels taken from the axis Ox in the direction of the axis Oy
         for (let j = 0; j< 360; j+=1){
             x = getX(i,j);
@@ -188,7 +204,45 @@ function CreateSurfaceData()
             normalsList.push(res[0],res[1],res[2]);
         }
     }
-    return [vertexList, normalsList];  
+    let texCoordList = [];
+    for(let i = 0;i<1;i+=0.0555){
+        for(let j =0;j<1;j+= 0.0028){
+            texCoordList.push(i,j);
+        }
+    }
+    //return texCoordList;
+    return [vertexList, normalsList,texCoordList];  
+}
+
+function CreateTextureCoord(){
+    let texCoordList = [];
+    for(let i = 0;i<1;i+=0.0555){
+        for(let j =0;j<1;j+= 0.0028){
+            texCoordList.push(i,j);
+        }
+    }
+    return texCoordList;
+}
+
+function createTexture(){
+    let texture = gl.createTexture();
+    
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    //gl.texParametri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+    //gl.texParametri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE, new Uint8Array([255,255,255,255]));
+
+    let img = new Image();
+    img.crossOrigin = "Anonymous";
+    img.src = 'https://webglfundamentals.org/webgl/resources/f-texture.png';
+    img.addEventListener('load', function() {
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE, img);
+        gl.generateMipmap(gl.TEXTURE_2D);
+        //draw();
+    })
 }
 
 /* Initialize the WebGL context. Called from init() */
@@ -198,21 +252,25 @@ function initGL() {
     shProgram = new ShaderProgram('Basic', prog);
     shProgram.Use();
 
-    shProgram.iAttribVertex              = gl.getAttribLocation(prog, "vertex");
-    shProgram.iModelViewProjectionMatrix = gl.getUniformLocation(prog, "ModelViewProjectionMatrix");
-    shProgram.iColor                     = gl.getUniformLocation(prog, "color");
+    shProgram.iAttribVertex                     = gl.getAttribLocation(prog, "vertex");
+    shProgram.iModelViewProjectionMatrix        = gl.getUniformLocation(prog, "ModelViewProjectionMatrix");
+    shProgram.iColor                            = gl.getUniformLocation(prog, "color");
     
-    shProgram.iAttribNormal              = gl.getAttribLocation(prog,"normals");
+    shProgram.iAttribNormal                     = gl.getAttribLocation(prog,"normals");
 
-    shProgram.iWorldInverseTransposeLocation = gl.getUniformLocation(prog, "worldInverseTranspose");
-    shProgram.iLightWorldPositionLocation = gl.getUniformLocation(prog, "lightWorldPosition");
-    shProgram.iWorldLocation             = gl.getUniformLocation(prog, "world");
+    shProgram.iWorldInverseTransposeLocation    = gl.getUniformLocation(prog, "worldInverseTranspose");
+    shProgram.iLightWorldPositionLocation       = gl.getUniformLocation(prog, "lightWorldPosition");
+    shProgram.iWorldLocation                    = gl.getUniformLocation(prog, "world");
+    shProgram.viewWorldPositionLocation         = gl.getUniformLocation(prog, "viewWorldPosition");
+    
+    shProgram.ITMU                              = gl.getUniformLocation(prog, "tmu");//u_tex->textureLocation
+    shProgram.itexCoordLocation                 = gl.getAttribLocation(prog, "texCoordLocation")//a_tex->texcoordLocation
 
-    shProgram.viewWorldPositionLocation = gl.getUniformLocation(prog, "viewWorldPosition");
     surface = new Model('Surface');
     let surfaceData = CreateSurfaceData()
-    surface.BufferData(surfaceData[0],surfaceData[1]);
+    surface.BufferData(surfaceData[0],surfaceData[1],surfaceData[2]);
 
+    createTexture();
 
     gl.enable(gl.DEPTH_TEST);
 }
