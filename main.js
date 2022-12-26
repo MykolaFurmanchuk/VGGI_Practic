@@ -41,11 +41,12 @@ function Model(name) {
         gl.enableVertexAttribArray(shProgram.iAttribNormal);
 
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iTexBuffer);
-        gl.vertexAttribPointer(shProgram.iTexBuffer, 2, gl.FLOAT, false, 0, 0);
-        gl.enableVertexAttribArray(shProgram.iTexBuffer);
+        gl.vertexAttribPointer(shProgram.itexCoordLocation, 2, gl.FLOAT, false, 0, 0);
+        gl.enableVertexAttribArray(shProgram.itexCoordLocation);
 
 
-        gl.drawArrays(gl.LINE_STRIP, 0, this.count);
+        gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.count);
+
     }
 }
 
@@ -85,8 +86,8 @@ function ShaderProgram(name, program) {
 function draw() { 
     gl.clearColor(0,0,0,1);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    
-    
+    gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
     /* Set the values of the projection transformation */
     let projection = m4.perspective(Math.PI/8, 1, 8, 12); 
     
@@ -105,14 +106,13 @@ function draw() {
     let worldInverseMatrix = m4.inverse(matAccum1);
     let worldInverseTransposeMatrix = m4.transpose(worldInverseMatrix);
 
-    gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, modelViewProjection ); //worldViewProjection
+    gl.uniformMatrix4fv(shProgram.iModelViewProjectionMatrix, false, modelViewProjection );
     gl.uniformMatrix4fv(shProgram.iWorldInverseTransposeLocation, false, worldInverseTransposeMatrix);
     gl.uniformMatrix4fv(shProgram.iWorldLocation, false, matAccum1);
     gl.uniform3fv(shProgram.iLightWorldPositionLocation, getCoordParabola() );
     gl.uniform3fv(shProgram.viewWorldPositionLocation, [100,150,200]);
 
     gl.uniform1i(shProgram.ITMU, 0);
-    //gl.enable(gl.TEXTURE_2D);
     surface.Draw();
 }
 
@@ -175,24 +175,28 @@ function getDerivativeV(u,v,x,y,z,delta){
 }
 function CreateSurfaceData()
 {
-    let normalsList =[];
+    let normalsList = [];
     let vertexList = [];
     let x = 0;
     let y = 0;
     let z = 0;
     let delta = 0.0001
+    let texCoordList = [];
     // 2 * b is a lenght of a segment between two cylinders of diferent diameters
     for (let i = 0;  i< 2 * b;  i+= 0.1) {
         // j is the angle in the planes of parallels taken from the axis Ox in the direction of the axis Oy
-        for (let j = 0; j< 360; j+=1){
+        for (let j = 0; j< 360; j+=0.1){
             x = getX(i,j);
             y = getY(i,j);
             z = getZ(i);
             let derU = getDerivativeU(i,j,x,y,z,delta);
             let derV = getDerivativeV(i,j,x,y,z,delta);
             let res = m4.cross(derU,derV);
+            
             vertexList.push(x, y, z);
             normalsList.push(res[0],res[1],res[2]);
+            texCoordList.push(i/(2 * b),j/360);
+          
 
             x = getX(i + 0.1, j);
             y = getY(i + 0.1, j);
@@ -202,47 +206,34 @@ function CreateSurfaceData()
             res = m4.cross(derU,derV);
             vertexList.push(x, y, z);
             normalsList.push(res[0],res[1],res[2]);
+            texCoordList.push((i+0.1)/(2 * b),j/360);
+            
         }
     }
-    let texCoordList = [];
-    for(let i = 0;i<1;i+=0.0555){
-        for(let j =0;j<1;j+= 0.0028){
-            texCoordList.push(i,j);
-        }
-    }
-    //return texCoordList;
     return [vertexList, normalsList,texCoordList];  
 }
 
-function CreateTextureCoord(){
-    let texCoordList = [];
-    for(let i = 0;i<1;i+=0.0555){
-        for(let j =0;j<1;j+= 0.0028){
-            texCoordList.push(i,j);
-        }
-    }
-    return texCoordList;
-}
+
 
 function createTexture(){
     let texture = gl.createTexture();
     
     gl.bindTexture(gl.TEXTURE_2D, texture);
-    //gl.texParametri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
-    //gl.texParametri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE, new Uint8Array([255,255,255,255]));
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE, 
+                  new Uint8Array([255,255,255,255]));
 
     let img = new Image();
     img.crossOrigin = "Anonymous";
-    img.src = 'https://webglfundamentals.org/webgl/resources/f-texture.png';
+    img.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Sciences_exactes.svg/256px-Sciences_exactes.svg.png';
     img.addEventListener('load', function() {
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE, img);
-        gl.generateMipmap(gl.TEXTURE_2D);
-        //draw();
-    })
+        console.log("Texture is loaded!");
+        draw();
+    });
 }
 
 /* Initialize the WebGL context. Called from init() */
@@ -270,9 +261,9 @@ function initGL() {
     let surfaceData = CreateSurfaceData()
     surface.BufferData(surfaceData[0],surfaceData[1],surfaceData[2]);
 
-    createTexture();
+    //createTexture();
 
-    gl.enable(gl.DEPTH_TEST);
+    //gl.enable(gl.DEPTH_TEST);
 }
 
 
@@ -336,5 +327,5 @@ function init() {
 
     spaceball = new TrackballRotator(canvas, draw, 0);
 
-    draw();
+    createTexture();
 }

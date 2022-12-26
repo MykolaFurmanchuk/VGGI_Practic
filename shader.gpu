@@ -57,8 +57,13 @@ void main() {
         float specAngle = max(dot(R, viewPoint), 0.0);
         specular = pow(specAngle, shininess);
     }
+    vec4 TextureColor = texture2D(tmu, v_texCoord);
 
-    gl_FragColor = texture2D(tmu,v_texCoord);
+    gl_FragColor = vec4(AmbientLight * AmbientModel +
+                      DiffuseLight * LightPoint * DiffuseModel +
+                      SpecularLight * specular * SpecularModel, 1.0);
+    
+    gl_FragColor += TextureColor;
 
 
 }`;
