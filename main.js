@@ -16,6 +16,7 @@ function Model(name) {
     this.iVertexBuffer = gl.createBuffer();
     this.iNormalBuffer = gl.createBuffer();
     this.iTexBuffer    = gl.createBuffer();
+    this.iPointBuffer  = gl.createBuffer();
     this.count = 0;
 
     this.BufferData = function(vertices,normals,texCoord) {
@@ -28,10 +29,14 @@ function Model(name) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iTexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoord), gl.STATIC_DRAW);
 
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.iPointBuffer)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0,0,0]), gl.DYNAMIC_DRAW);
+
         this.count = vertices.length/3;
     }
 
     this.Draw = function() {
+        gl.uniform1i(shProgram.iDrawPoint, false);
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iVertexBuffer);
         gl.vertexAttribPointer(shProgram.iAttribVertex, 3, gl.FLOAT, false, 0, 0);
         gl.enableVertexAttribArray(shProgram.iAttribVertex);
@@ -47,6 +52,8 @@ function Model(name) {
 
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, this.count);
 
+        gl.uniform1i(shProgram.iDrawPoint, true);
+        gl.drawArrays(gl.POINTS, 0, 1);
     }
 }
 
@@ -72,6 +79,8 @@ function ShaderProgram(name, program) {
      
     this.ITMU = -1;
     this.itexCoordLocation = -1;
+
+    this.iDrawPoint = -1;
 
     this.Use = function() {
         gl.useProgram(this.prog);
@@ -254,9 +263,10 @@ function initGL() {
     shProgram.iWorldLocation                    = gl.getUniformLocation(prog, "world");
     shProgram.viewWorldPositionLocation         = gl.getUniformLocation(prog, "viewWorldPosition");
     
-    shProgram.Itmu                            = gl.getUniformLocation(prog, "tmu");//u_tex->textureLocation
+    shProgram.Itmu                              = gl.getUniformLocation(prog, "tmu");//u_tex->textureLocation
     shProgram.itexCoordLocation                 = gl.getAttribLocation(prog, "texCoordLocation")//a_tex->texcoordLocation
 
+    shProgram.iDrawPoint                        = gl.getUniformLocation(prog,"DrawPoint");
     surface = new Model('Surface');
     let surfaceData = CreateSurfaceData()
     surface.BufferData(surfaceData[0],surfaceData[1],surfaceData[2]);

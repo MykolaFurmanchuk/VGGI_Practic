@@ -20,6 +20,7 @@ void main() {
     v_surfaceToLight = lightWorldPosition - surfaceWorldPosition;
     vertexPos = vec3(vertexPos4) / vertexPos4.w;
     v_texCoord = texCoordLocation;
+    gl_PointSize = 30.0;
 }`;
 // Fragment shader
 const fragmentShaderSource = `
