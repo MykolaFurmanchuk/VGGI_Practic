@@ -79,7 +79,7 @@ function ShaderProgram(name, program) {
      
     this.ITMU = -1;
     this.itexCoordLocation = -1;
-
+    this.iPointWorldLocation = -1;
     this.iDrawPoint = -1;
 
     this.Use = function() {
@@ -120,23 +120,59 @@ function draw() {
     gl.uniform3fv(shProgram.viewWorldPositionLocation, [100,150,200]);
 
     gl.uniform1i(shProgram.Itmu, 0);
+    gl.uniform3fv(shProgram.iPointWorldLocation, getPointLocation());
     surface.Draw();
 }
 
 let InputCounter = 0.0;
 window.addEventListener("keydown", (event) =>{  
     switch (event.key) {
-      case "ArrowLeft":
-        drawParabolaL();
-        break;
-      case "ArrowRight":
-        drawParabolaR();
-        break;
-      default:
-        return; 
+        case "ArrowLeft":
+            drawParabolaL();
+            break;
+        case "ArrowRight":
+            drawParabolaR();
+            break;
+        case "w":
+            ProcessPressW();
+            break;
+        case "s":
+            ProcessPressS();
+            break;
+        case "a":
+            ProcessPressA();
+            break;
+        case "d":
+            ProcessPressD();
+            break;
+        default:
+            return; 
     }
 });
 
+function ProcessPressW()
+{
+    pointLocationJ -= 1.0;
+    draw();
+}
+
+function ProcessPressS()
+{
+    pointLocationJ += 1.0;
+    draw();
+}
+
+function ProcessPressA()
+{
+    pointLocationI -= 0.1;
+    draw();
+}
+
+function ProcessPressD()
+{
+    pointLocationI += 0.1;
+    draw();
+}
 function drawParabolaL()
 {
     InputCounter -= 0.05;
@@ -220,7 +256,18 @@ function CreateSurfaceData()
     return [vertexList, normalsList,texCoordList];  
 }
 
+let pointLocationI = 0;
+let pointLocationJ = 0;
+function getPointLocation(){
+    let pointList = [];
+    let x,y,z;
 
+    x = getX(pointLocationI,pointLocationJ);
+    y = getY(pointLocationI,pointLocationJ);
+    z = getZ(pointLocationI);
+    pointList.push(x,y,z);
+    return pointList;
+}
 
 function createTexture(){
     let texture = gl.createTexture();
@@ -267,6 +314,8 @@ function initGL() {
     shProgram.itexCoordLocation                 = gl.getAttribLocation(prog, "texCoordLocation")//a_tex->texcoordLocation
 
     shProgram.iDrawPoint                        = gl.getUniformLocation(prog,"DrawPoint");
+
+    shProgram.iPointWorldLocation               = gl.getUniformLocation(prog,"PointWorldLocation");
     surface = new Model('Surface');
     let surfaceData = CreateSurfaceData()
     surface.BufferData(surfaceData[0],surfaceData[1],surfaceData[2]);
