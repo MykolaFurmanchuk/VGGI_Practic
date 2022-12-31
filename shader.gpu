@@ -17,7 +17,7 @@ uniform vec3 PointWorldLocation;
 void main() {
     if (DrawPoint == true) {
         gl_Position = ModelViewProjectionMatrix * vec4(PointWorldLocation,1.0);
-        gl_PointSize = 30.0;
+        gl_PointSize = 10.0;
     }
     else{
         vec4 vertexPos4 = ModelViewProjectionMatrix * vec4(vertex, 1.0);
