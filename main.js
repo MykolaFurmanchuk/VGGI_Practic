@@ -29,6 +29,9 @@ function Model(name) {
         gl.bindBuffer(gl.ARRAY_BUFFER, this.iTexBuffer);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(texCoord), gl.STATIC_DRAW);
 
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.iPointBuffer)
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0,0,0]), gl.DYNAMIC_DRAW);
+
         
 
         this.count = vertices.length/3;
@@ -80,6 +83,8 @@ function ShaderProgram(name, program) {
     this.itexCoordLocation = -1;
     this.iPointWorldLocation = -1;
     this.iDrawPoint = -1;
+    this.iScaleValue = -1;
+    this.iPointLocation_u_v = -1;
 
     this.Use = function() {
         gl.useProgram(this.prog);
@@ -120,6 +125,8 @@ function draw() {
 
     gl.uniform1i(shProgram.Itmu, 0);
     gl.uniform3fv(shProgram.iPointWorldLocation, getPointLocation());
+    gl.uniform1f(shProgram.iScaleValue,  ScaleValue);
+    gl.uniform2fv(shProgram.iPointLocation_u_v,[pointLocationI / (2 * b), pointLocationJ /360]);
     surface.Draw();
 }
 
@@ -144,11 +151,27 @@ window.addEventListener("keydown", (event) =>{
         case "d":
             ProcessPressD();
             break;
+        case "+":
+            ProcessAddValueScale();
+            break;
+        case "-":
+            ProcessSubValueScale();
+            break;
         default:
             return; 
     }
 });
 
+let ScaleValue = 0.0;
+
+function ProcessAddValueScale()
+{
+    ScaleValue += 0.2
+}
+function ProcessSubValueScale()
+{
+    ScaleValue -= 0.2
+}
 function ProcessPressW()
 {
     pointLocationJ -= 1.0;
@@ -284,8 +307,7 @@ function createTexture(){
     let img = new Image();
     img.crossOrigin = "Anonymous";
     //img.src = 'https://www.the3rdsequence.com/texturedb/download/25/texture/jpg/256/rock+mountain-256x256.jpg';
-    img.src = 'https://www.manytextures.com/download/18/texture/jpg/256/stone-wall-256x256.jpg';
-
+    img.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Sciences_exactes.svg/256px-Sciences_exactes.svg.png';
     img.addEventListener('load', function() {
         gl.bindTexture(gl.TEXTURE_2D, texture);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE, img);
@@ -317,6 +339,8 @@ function initGL() {
     shProgram.iDrawPoint                        = gl.getUniformLocation(prog,"DrawPoint");
 
     shProgram.iPointWorldLocation               = gl.getUniformLocation(prog,"PointWorldLocation");
+    shProgram.iScaleValue                       = gl.getUniformLocation(prog,"fScaleValue");
+    shProgram.iPointLocation_u_v                = gl.getUniformLocation(prog,"UserPointLocation");
     surface = new Model('Surface');
     let surfaceData = CreateSurfaceData()
     surface.BufferData(surfaceData[0],surfaceData[1],surfaceData[2]);
