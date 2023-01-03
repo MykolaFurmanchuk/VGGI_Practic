@@ -7,6 +7,10 @@ let spaceball;                  // A SimpleRotator object that lets the user rot
 let R1 = 0.3;
 let R2 = 3 * R1;
 let b =  3 * R1;
+let pointLocationI = 0;
+let pointLocationJ = 0;
+let ScaleValue = 0.0;
+let InputCounter = 0.0;
 function deg2rad(angle) {
     return angle * Math.PI / 180;
 }
@@ -126,11 +130,11 @@ function draw() {
     gl.uniform1i(shProgram.Itmu, 0);
     gl.uniform3fv(shProgram.iPointWorldLocation, getPointLocation());
     gl.uniform1f(shProgram.iScaleValue,  ScaleValue);
-    gl.uniform2fv(shProgram.iPointLocation_u_v,[pointLocationI / (2 * b), pointLocationJ /360]);
+    gl.uniform2fv(shProgram.iPointLocation_u_v,[pointLocationI / (2 * b), pointLocationJ / 360]);
     surface.Draw();
 }
 
-let InputCounter = 0.0;
+
 window.addEventListener("keydown", (event) =>{  
     switch (event.key) {
         case "ArrowLeft":
@@ -162,15 +166,17 @@ window.addEventListener("keydown", (event) =>{
     }
 });
 
-let ScaleValue = 0.0;
+
 
 function ProcessAddValueScale()
 {
     ScaleValue += 0.2
+    draw();
 }
 function ProcessSubValueScale()
 {
     ScaleValue -= 0.2
+    draw();
 }
 function ProcessPressW()
 {
@@ -278,8 +284,6 @@ function CreateSurfaceData()
     return [vertexList, normalsList,texCoordList];  
 }
 
-let pointLocationI = 0;
-let pointLocationJ = 0;
 function getPointLocation(){
     let pointList = [];
     let x,y,z;
@@ -296,8 +300,8 @@ function createTexture(){
     
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
@@ -306,7 +310,6 @@ function createTexture(){
 
     let img = new Image();
     img.crossOrigin = "Anonymous";
-    //img.src = 'https://www.the3rdsequence.com/texturedb/download/25/texture/jpg/256/rock+mountain-256x256.jpg';
     img.src = 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Sciences_exactes.svg/256px-Sciences_exactes.svg.png';
     img.addEventListener('load', function() {
         gl.bindTexture(gl.TEXTURE_2D, texture);
